@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+# 觸發條件：當 push 到 main 分支，或是發起 Pull Request 時
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 下載你的程式碼
+    - uses: actions/checkout@v4
+
+    # 2. 設定 Python 環境
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    # 3. 安裝依賴
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # 安裝測試與檢查工具
+        pip install flake8 pytest
+
+    # 4. 程式碼品質檢查 (Linting)
+    # 這裡會檢查有沒有語法錯誤 (Syntax errors) 或定義了變數卻沒使用 (undefined names)
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    # 5. (可選) 執行單元測試
+    # 目前我們還沒寫測試檔，先留著這個區塊，未來有 test_*.py 時會自動執行
+    - name: Test with pytest
+      run: |
+        # pytest
+        echo "No tests yet, skipping..."
