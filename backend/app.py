@@ -178,6 +178,8 @@ async def handle_message(user_id: str, message: str) -> tuple[str, str]:
         for m in reply_messages:
             if hasattr(m, "text"):
                 parts.append(m.text)
+            elif hasattr(m, "alt_text"):  # FlexMessage
+                parts.append(m.alt_text)
             else:
                 parts.append(str(m))
         return "\n".join(parts), intent
