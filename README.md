@@ -113,41 +113,46 @@ graph TD
 
 ## 📂 專案結構
 
+本專案採用 **Monorepo** 架構：`apps/` 放可獨立部署的應用，`packages/` 放跨應用共用程式碼。
+
 ```
 ai-butler/
-├── backend/
-│   ├── main.py                      # LINE Webhook 入口 (Cloud Function)
-│   ├── app.py                       # FastAPI 入口 (本地開發 / curl 測試)
-│   ├── requirements.txt             # Python 依賴
-│   └── src/
-│       ├── config.py                # 統一設定管理 (模型名稱、生成參數)
-│       ├── agents/                  # Agents (AI Parsers & Controllers)
-│       │   ├── calendar.py          # 行事曆意圖解析 + 參數清洗
-│       │   ├── expense.py           # 費用記帳意圖解析
-│       │   ├── chat.py              # 閒聊 Agent（含記憶注入）
-│       │   └── memory_parser.py     # ✨ 記憶摘要提取 Agent
-│       ├── services/                # Drivers & Adapters
-│       │   ├── firestore_service.py # ✨ Firestore Vector Search (記憶存取 + Time-decay)
-│       │   ├── gcal_service.py      # Google Calendar API 底層串接
-│       │   └── llm/                 # LLM 抽象層 (可擴充新模型)
-│       │       ├── base.py          # LLMProvider 抽象介面 (async)
-│       │       ├── gemini.py        # Gemini 適配器 (google-genai SDK)
-│       │       ├── claude.py        # Claude 適配器 (AsyncAnthropic)
-│       │       ├── embedding.py     # ✨ Embedding Service (固定 Gemini)
-│       │       └── factory.py       # Provider 工廠函式
-│       ├── skills/                  # Skills (Pure Python Logic)
-│       │   ├── calendar_skill.py    # Google Calendar CRUD (原子操作)
-│       │   └── expense.py           # Google Sheets 記帳
-│       ├── scripts/                 # Standalone Scripts (報表用腳本)
-│       │   ├── daily_report.py      # 每日行程推播
-│       │   └── weekly_report.py     # 每週行程推播
-│       ├── prompts/                 # AI System Prompts
-│       │   ├── system_prompt.txt    # Router Prompt (含 needs_memory 旗標)
-│       │   ├── calendar_agent.txt   # Calendar Agent Prompt
-│       │   ├── expense_agent.txt    # Expense Agent Prompt
-│       │   └── chat_agent.txt       # Chat Agent Prompt (含記憶注入模板)
-│       └── utils/                   # Helpers & UI
-│           └── flex_templates.py    # LINE Flex Message 模板
+├── apps/
+│   ├── api/                         # Python 後端 (Cloud Function / FastAPI)
+│   │   ├── main.py                  # LINE Webhook 入口 (Cloud Function)
+│   │   ├── app.py                   # FastAPI 入口 (本地開發 / curl 測試)
+│   │   ├── requirements.txt         # Python 依賴
+│   │   └── src/
+│   │       ├── config.py            # 統一設定管理 (模型名稱、生成參數)
+│   │       ├── agents/              # Agents (AI Parsers & Controllers)
+│   │       │   ├── calendar.py      # 行事曆意圖解析 + 參數清洗
+│   │       │   ├── expense.py       # 費用記帳意圖解析
+│   │       │   ├── chat.py          # 閒聊 Agent（含記憶注入）
+│   │       │   └── memory_parser.py # ✨ 記憶摘要提取 Agent
+│   │       ├── services/            # Drivers & Adapters
+│   │       │   ├── firestore_service.py # ✨ Firestore Vector Search (記憶存取 + Time-decay)
+│   │       │   ├── gcal_service.py  # Google Calendar API 底層串接
+│   │       │   └── llm/             # LLM 抽象層 (可擴充新模型)
+│   │       │       ├── base.py      # LLMProvider 抽象介面 (async)
+│   │       │       ├── gemini.py    # Gemini 適配器 (google-genai SDK)
+│   │       │       ├── claude.py    # Claude 適配器 (AsyncAnthropic)
+│   │       │       ├── embedding.py # ✨ Embedding Service (固定 Gemini)
+│   │       │       └── factory.py   # Provider 工廠函式
+│   │       ├── skills/              # Skills (Pure Python Logic)
+│   │       │   ├── calendar_skill.py # Google Calendar CRUD (原子操作)
+│   │       │   └── expense.py       # Google Sheets 記帳
+│   │       ├── scripts/             # Standalone Scripts (報表用腳本)
+│   │       │   ├── daily_report.py  # 每日行程推播
+│   │       │   └── weekly_report.py # 每週行程推播
+│   │       ├── prompts/             # AI System Prompts
+│   │       │   ├── system_prompt.txt    # Router Prompt (含 needs_memory 旗標)
+│   │       │   ├── calendar_agent.txt   # Calendar Agent Prompt
+│   │       │   ├── expense_agent.txt    # Expense Agent Prompt
+│   │       │   └── chat_agent.txt       # Chat Agent Prompt (含記憶注入模板)
+│   │       └── utils/               # Helpers & UI
+│   │           └── flex_templates.py # LINE Flex Message 模板
+│   └── web/                         # Frontend Web App (開發中)
+├── packages/                        # 跨應用共用程式碼 (types、utils、UI components)
 ├── docs/
 │   └── docs/
 │       └── ARCHITECTURE_FAQ.md      # 架構設計決策紀錄 (中英對照)
@@ -175,7 +180,7 @@ ai-butler/
 
 ```bash
 git clone https://github.com/YenChengLai/ai-butler.git
-cd ai-butler/backend
+cd ai-butler/apps/api
 
 python3 -m venv venv
 source venv/bin/activate    # Windows: venv\Scripts\activate
@@ -184,7 +189,7 @@ pip install -r requirements.txt
 
 ### 3. 環境變數設定 (.env)
 
-請在 `backend/` 目錄下建立 `.env` 檔案：
+請在 `apps/api/` 目錄下建立 `.env` 檔案：
 
 ```ini
 # LINE Bot (僅 main.py 需要)
@@ -216,7 +221,7 @@ GOOGLE_GENAI_API_KEY=你的_Gemini_Key
 ### 5. 本地開發與測試 (FastAPI)
 
 ```bash
-cd backend
+cd apps/api
 uvicorn app:app --reload --port 8000
 ```
 
@@ -249,14 +254,14 @@ gcloud functions deploy webhook \
   --runtime=python311 \
   --region=asia-east1 \
   --memory=512MiB \
-  --source=backend/ \
+  --source=apps/api/ \
   --entry-point=webhook \
   --trigger-http \
   --allow-unauthenticated \
   --set-env-vars="CHANNEL_ACCESS_TOKEN=...,CHANNEL_SECRET=...,LLM_PROVIDER=gemini,GOOGLE_GENAI_API_KEY=...,CALENDAR_ID=..."
 ```
 
-> ⚠️ 本地測試需要有效的 `service_account.json` 在 `backend/` 目錄，並且設定 `GOOGLE_APPLICATION_CREDENTIALS` 環境變數。
+> ⚠️ 本地測試需要有效的 `service_account.json` 在 `apps/api/` 目錄，並且設定 `GOOGLE_APPLICATION_CREDENTIALS` 環境變數。
 
 ### 7. 設定 GitHub Actions (自動報表)
 
@@ -292,7 +297,7 @@ base64 -i service_account.json -o sa_base64.txt
 
 > 📌 **注意**: `GOOGLE_GENAI_API_KEY` 無論使用哪個 Provider 都 **必填**，因為記憶向量化 (Embedding) 固定使用 `gemini-embedding-001`，以確保向量空間一致性。
 
-> 模型名稱可在 `backend/src/config.py` 中調整。
+> 模型名稱可在 `apps/api/src/config.py` 中調整。
 
 ## 📝 使用範例
 

@@ -23,13 +23,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f apps/api/requirements.txt ]; then pip install -r apps/api/requirements.txt; fi
 
     # 關鍵：處理 GCP 憑證 (因為 GitHub 機器沒有內建憑證)
     - name: Setup Google Credentials
       run: |
-        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > service_account.json
-        echo "GOOGLE_APPLICATION_CREDENTIALS=service_account.json" >> $GITHUB_ENV
+        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > apps/api/service_account.json
+        echo "GOOGLE_APPLICATION_CREDENTIALS=apps/api/service_account.json" >> $GITHUB_ENV
 
     - name: Run Weekly Report Script
       env:
@@ -37,5 +37,5 @@ jobs:
         CALENDAR_ID: ${{ secrets.CALENDAR_ID }}
         TARGET_GROUP_ID: ${{ secrets.TARGET_GROUP_ID }} # 你想通知的群組 ID
       run: |
-        export PYTHONPATH=$PYTHONPATH:.
-        python -u src/scripts/weekly_report.py
+        export PYTHONPATH=$PYTHONPATH:apps/api
+        python -u apps/api/src/scripts/weekly_report.py
